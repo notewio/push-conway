@@ -4,11 +4,11 @@ import * as Core from "./game.core.js";
 const SERVER_BROADCAST_DT = 1000/60
 
 
-class Server {
+class Server extends Core.Game {
 
     constructor() {
+        super()
 
-        this.players = {}
         this.socket
 
         this.lastState = new Core.State()
@@ -22,13 +22,13 @@ class Server {
 
     // add a player to the game
     addPlayer(id) {
-        this.players[id] = new Core.Player()
+        this.state.players[id] = new Core.Player()
         this.socket.emit("playerconnected", id)
     }
 
     // remove a player from the game
     removePlayer(id) {
-        delete this.players[id]
+        delete this.state.players[id]
         delete this.lastState.players[id]
         this.socket.emit("playerdisconnected", id)
     }
@@ -44,11 +44,11 @@ class Server {
 
         this.currentTime = t
 
-        for (const [id, player] of Object.entries(this.players)) {
-            Core.updatePlayer1(this.dt, player)
+        for (const [id, player] of Object.entries(this.state.players)) {
+            super.updatePlayer1(this.dt, player)
         }
-        for (const [id, player] of Object.entries(this.players)) {
-            Core.updatePlayer2(this.dt, player)
+        for (const [id, player] of Object.entries(this.state.players)) {
+            super.updatePlayer2(this.dt, player)
         }
 
     }
@@ -56,7 +56,7 @@ class Server {
 
     // update the server's state to be sent out
     updateState() {
-        for (const [id, player] of Object.entries(this.players)) {
+        for (const [id, player] of Object.entries(this.state.players)) {
             this.lastState.players[id] = {
                 position: player.position,
                 velocity: player.velocity,

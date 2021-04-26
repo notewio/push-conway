@@ -48,7 +48,7 @@ io.on('connection', client => {
     console.log('io\t:: player ' + client.userid + ' connected')
 
     client.on('input', ( data ) => {
-        game.players[client.userid].inputs.push(data)
+        game.state.players[client.userid].inputs.push(data)
     })
 
     client.on('disconnect', () => {

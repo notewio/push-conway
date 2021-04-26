@@ -10,11 +10,10 @@ const INPUT_BUFFER_SIZE = 100
 const SERVER_UPDATE_BUFFER_SIZE = 100
 
 
-class Client {
+class Client extends Core.Game {
 
     constructor() {
-
-        this.state = new Core.State()
+        super()
 
         this.selfInputs = []
         this.serverUpdates = []
@@ -180,8 +179,8 @@ class Client {
             let dt = (this.selfInputs[firstIndex].time - this.selfInputs[firstIndex-1].time) / 1000
 
             self.inputs.push(this.selfInputs[firstIndex])
-            Core.updatePlayer1(dt, self)
-            Core.updatePlayer2(dt, self)
+            super.updatePlayer1(dt, self)
+            super.updatePlayer2(dt, self)
 
             firstIndex++
             // if (this was the most up to date "command")
