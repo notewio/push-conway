@@ -1,7 +1,7 @@
 import * as THREE from "./lib/three.module.js";
 import * as Core from "./game.core.js";
 
-const SERVER_BROADCAST_DT = 40
+const SERVER_BROADCAST_DT = 1000/60
 
 
 class Server {

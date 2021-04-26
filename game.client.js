@@ -251,9 +251,13 @@ class Client {
         if (this.keysPressed.l ^ this.keysPressed.r) {
             input.sidemove = this.keysPressed.r ? 1 : -1
         }
-        // TODO: jumping
+
+        if (this.keysPressed.j) {
+            input.upmove = 1
+        }
 
         this.camera.quaternion.toArray(input.angle)
+        input.angle = Core.fixedQuat(input.angle)
 
         this.socket.emit("input", input)
         this.selfInputs.push(input)

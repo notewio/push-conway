@@ -15,8 +15,9 @@ const CONTROLS = {
 }
 
 // Physics variables.
-const PLAYER_ACCEL = 200
-const FRICTION_ACCEL = -PLAYER_ACCEL/2
+const PLAYER_ACCEL = 60
+const FRICTION_ACCEL = -PLAYER_ACCEL/4
+const GRAVITY_ACCEL = -9.8
 const XZ_VELOCITY_CLAMP = 4
 
 
@@ -74,6 +75,29 @@ class State {
 }
 
 
+/* fixedVec( vector ) => void
+    Rounds a vector to three decimal places. Directly modifies parameter.
+ */
+function fixedVec (vector) {
+    vector.x = Math.round(vector.x*1000) / 1000
+    vector.y = Math.round(vector.y*1000) / 1000
+    vector.z = Math.round(vector.z*1000) / 1000
+}
+/* fixedQuat( array representation of quaternion ) => array
+    Rounds a quaternion to three decimal places.
+ */
+function fixedQuat (q) {
+    return q.map(x => Math.round(x*1000) / 1000)
+}
+
+/* clamp( number, number, number ) => number
+    Clamps a number between a maximum and minimum.
+ */
+function clamp(num, min, max) {
+    return num <= min ? min : num >= max ? max : num;
+}
+
+
 /* verlet1( number, vector, vector ) => vector
     Function for the first part of the velocity verlet calculations. Returns
         the delta position.
@@ -116,7 +140,7 @@ function interp (p1, p2) {
     if (distance > XZ_VELOCITY_CLAMP) { // if we're really far off, don't bother interpolating, just snap to the position
         p1.copy(p2)
     } else if (distance > 0.1) {
-        p1.lerp(p2, 0.1)
+        p1.lerp(p2, 0.4)
     } // if we're really close, we're fine, don't need to do anything
 
 }
@@ -148,7 +172,7 @@ function processInput(player) {
         player.acceleration.z = input.forwardmove * PLAYER_ACCEL
         player.acceleration.x = input.sidemove * PLAYER_ACCEL
 
-        // TODO: jumping
+        player.velocity.y = input.upmove > 0 && player.position.y == 0 ? input.upmove * 5 : player.velocity.y
 
         player.angle.fromArray(input.angle)
 
@@ -159,6 +183,25 @@ function processInput(player) {
     player.acceleration.z += FRICTION_ACCEL * Math.sign(player.velocity.z)
     player.acceleration.x += FRICTION_ACCEL * Math.sign(player.velocity.x)
 
+    // gravity forces
+    player.acceleration.y = GRAVITY_ACCEL
+
+}
+
+/* collision( vector, Player ) => void
+    Check for collision with a player and a delta position vector.
+ */
+function collision(dir, player) {
+    let oldPos = player.position
+    let newPos = player.position.clone().add(dir)
+
+    // world borders
+    if (newPos.y < 0) { dir.y = -oldPos.y; player.velocity.y = 0 }
+
+    if (newPos.x < -32) { dir.x = -32 - oldPos.x; player.velocity.x = 0 }
+    if (newPos.x >  32) { dir.x =  32 - oldPos.x; player.velocity.x = 0 }
+    if (newPos.z < -32) { dir.z = -32 - oldPos.z; player.velocity.z = 0 }
+    if (newPos.z >  32) { dir.z =  32 - oldPos.z; player.velocity.z = 0 }
 }
 
 /* updatePlayer1( number, Player ) => void
@@ -175,8 +218,17 @@ function updatePlayer1(dt, player) {
     player.inputs = []
 
     let dir = verlet1(dt, player.acceleration, player.velocity)
-    dir.applyQuaternion(player.angle)
-    dir.clampScalar(-XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
+
+    let rot = player.angle.clone()
+    rot.x = 0
+    rot.z = 0
+    rot.normalize()
+    dir.applyQuaternion(rot)
+
+    dir.x = clamp(dir.x, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
+    dir.z = clamp(dir.z, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
+
+    collision(dir, player)
 
     player.position.add(dir)
 
@@ -201,9 +253,13 @@ function updatePlayer2(dt, player) {
     else {
 
         let difference = acceleration.clone()
+        difference.y = 0
         difference.multiplyScalar(dt)
-        if (difference.length()+0.001 >= velocity.length()) {
+        let xzSpeed = velocity.clone()
+        xzSpeed.y = 0
+        if (difference.length() >= xzSpeed.length()) {
             // stop it from reversing the movement
+            verlet2(dt, acceleration, velocity)
             velocity.x = 0
             velocity.z = 0
         } else {
@@ -212,12 +268,17 @@ function updatePlayer2(dt, player) {
     }
 
     // clamp velocity
-    velocity.clampScalar(-XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
+    velocity.x = clamp(velocity.x, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
+    velocity.z = clamp(velocity.z, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
+
+    // round off the position and velocity
+    fixedVec(player.velocity)
+    fixedVec(player.position)
 
 }
 
 export {
     DT, CONTROLS, PLAYER_ACCEL, FRICTION_ACCEL, XZ_VELOCITY_CLAMP,
     Input, Player, State,
-    verlet1, verlet2, interp, sphere_interp, processInput, updatePlayer1, updatePlayer2
+    fixedVec, fixedQuat, verlet1, verlet2, interp, sphere_interp, processInput, updatePlayer1, updatePlayer2
 }
