@@ -144,7 +144,7 @@ class Client {
 
         }
 
-        //this.prediction()
+        this.prediction()
 
     }
 
@@ -171,15 +171,17 @@ class Client {
         if (firstIndex == 0) { return }
 
         let self = this.state.players[this.id]
+        self.velocity.copy(fromState.velocity)
+        self.position.copy(fromState.position)
 
         let toState = new Core.Player()
         fromState.acceleration = new THREE.Vector3()
         while (true) {
-            let dt = this.selfInputs[firstIndex].time - this.selfInputs[firstIndex-1].time
+            let dt = (this.selfInputs[firstIndex].time - this.selfInputs[firstIndex-1].time) / 1000
 
-            self.inputs.push[this.selfInputs[firstIndex]]
+            self.inputs.push(this.selfInputs[firstIndex])
             Core.updatePlayer1(dt, self)
-            Core.updatePlayer2(dt,self)
+            Core.updatePlayer2(dt, self)
 
             firstIndex++
             // if (this was the most up to date "command")
@@ -222,7 +224,6 @@ class Client {
     // Render the scene
     render() {
         requestAnimationFrame((t) => this.render())
-        this.prediction()
         this.renderer.render(this.scene, this.camera)
     }
 
