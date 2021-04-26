@@ -33,7 +33,7 @@ class Client {
     }
     initSocket() {
 
-        this.socket = io.connect('/', { "reconnect": false })
+        this.socket = io.connect('/', { "reconnection": false }) // TODO: dev only
         this.id
 
         this.socket.on("onconnected", this.connected.bind(this))
