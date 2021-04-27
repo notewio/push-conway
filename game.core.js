@@ -14,14 +14,18 @@ const CONTROLS = {
 
 // Physics variables.
 const PLAYER_ACCEL = 60
-const FRICTION_ACCEL = -PLAYER_ACCEL / 4
+const FRICTION_ACCEL = -PLAYER_ACCEL / 6
 const GRAVITY_ACCEL = -9.8
 const XZ_VELOCITY_CLAMP = 4
+const JUMP_VELOCITY = 5
+const PUSH_VELOCITY = 18
 
 // Sizes.
 const GRID_SIZE = 4
 const WORLD_SIZE = 32
 const PLAYER_SIZE = 1
+const PUSH_DISTANCE = 6
+const PUSH_RADIUS = Math.PI / 3
 
 
 // Class representing a user input.
@@ -36,6 +40,8 @@ class Input {
         this.forwardmove = 0
         this.sidemove = 0
         this.upmove = 0
+
+        this.attack = 0
 
     }
 
@@ -64,6 +70,13 @@ class Player {
         this.inputs = []
         this.lastInput = 0
         this.moving = false
+
+        this.pushedAngle = new THREE.Vector3()
+        this.pushing = false
+        this.inPush = false // are we still in the air after being pushed
+        this.lastPush = 0
+
+        this.onFloor = false
 
         this.id
 
@@ -109,21 +122,28 @@ class Game {
         for (let i = 0; i < player.inputs.length; i++) {
             let input = player.inputs[i]
 
-            player.acceleration.z = input.forwardmove * PLAYER_ACCEL
-            player.acceleration.x = input.sidemove * PLAYER_ACCEL
+            if (!player.inPush) {
+                player.acceleration.z = input.forwardmove * PLAYER_ACCEL
+                player.acceleration.x = input.sidemove * PLAYER_ACCEL
 
-            player.velocity.y =
-                input.upmove > 0 && player.position.y == 0
-                    ? input.upmove * 5
-                    : player.velocity.y
+                player.velocity.y =
+                    input.upmove > 0 && player.onFloor
+                        ? input.upmove * JUMP_VELOCITY
+                        : player.velocity.y
+            }
 
             player.angle.fromArray(input.angle)
+
+            let nowPushing = input.attack == 1
+            player.pushing = nowPushing && !player.pushing // there was a change from not pushing to pushing
         }
 
         // friction forces
         player.moving = player.acceleration.x != 0 || player.acceleration.z != 0
-        player.acceleration.z += FRICTION_ACCEL * Math.sign(player.velocity.z)
-        player.acceleration.x += FRICTION_ACCEL * Math.sign(player.velocity.x)
+        if (player.onFloor) {
+            player.acceleration.z += FRICTION_ACCEL * Math.sign(player.velocity.z)
+            player.acceleration.x += FRICTION_ACCEL * Math.sign(player.velocity.x)
+        }
 
         // gravity forces
         player.acceleration.y = GRAVITY_ACCEL
@@ -137,9 +157,15 @@ class Game {
 
         let oldPos = player.position
         let newPos = player.position.clone().add(dir)
+        player.onFloor = false
 
         // world borders
-        if (newPos.y <= 0) { dir.y = -oldPos.y; player.velocity.y = 0 }
+        if (newPos.y <= 0) {
+            dir.y = -oldPos.y
+            player.velocity.y = 0
+            player.onFloor = true
+            player.inPush = false
+        }
 
         let lb = -WORLD_SIZE + PLAYER_SIZE,
             rb = WORLD_SIZE - PLAYER_SIZE
@@ -167,11 +193,47 @@ class Game {
             ) {
                 if (oldPos.x <= sx) { dir.x = sx - oldPos.x }
                 if (oldPos.x >= mx) { dir.x = mx - oldPos.x }
-                if (oldPos.y <= sy) { dir.y = sy - oldPos.y }
-                if (oldPos.y >= my) { dir.y = my - oldPos.y }
+                if (oldPos.y <= sy) {
+                    dir.y = sy - oldPos.y
+                    player.velocity.y = 0
+                    player.onFloor = true
+                    player.inPush = false
+                }
+                if (oldPos.y >= my) {
+                    dir.y = my - oldPos.y
+                    player.velocity.y = 0
+                    player.onFloor = true
+                    player.inPush = false
+                }
                 if (oldPos.z <= sz) { dir.z = sz - oldPos.z }
                 if (oldPos.z >= mz) { dir.z = mz - oldPos.z }
             }
+        }
+
+    }
+
+    /* updatePlayer0( number, Player ) => void
+        Process the player's inputs and see who they've pushed.
+     */
+    updatePlayer0(dt, player) {
+
+        this.processInput(player)
+        if (player.inputs.length > 0) {
+            player.lastInput = player.inputs[player.inputs.length - 1].time
+        }
+        player.inputs = []
+
+        if (player.pushing && new Date().getTime() - player.lastPush > 5000) {// TODO: nasty calls to getTime, find some cleaner way to use the time...
+            for (const [id, other] of Object.entries(this.state.players)) {
+                if (other.id == player.id) { continue }
+                let looking = this.lookingAt(player, other)
+                if (looking != false) {
+                    other.pushedAngle.copy(looking)
+                } else {
+                    other.pushedAngle.set(0, 0, 0)
+                }
+            }
+            player.lastPush = new Date().getTime()
         }
 
     }
@@ -182,19 +244,23 @@ class Game {
      */
     updatePlayer1(dt, player) {
 
-        this.processInput(player)
-        if (player.inputs.length > 0) {
-            player.lastInput = player.inputs[player.inputs.length - 1].time
+        if (player.pushedAngle.manhattanLength() != 0) {
+            player.velocity.copy(player.pushedAngle)
+            player.velocity.multiplyScalar(PUSH_VELOCITY)
+            player.pushedAngle.set(0, 0, 0)
+            player.acceleration.set(0, GRAVITY_ACCEL, 0)
+            player.inPush = true
         }
-        player.inputs = []
 
         let dir = verlet1(dt, player.acceleration, player.velocity)
 
-        let rot = player.angle.clone()
-        rot.x = 0
-        rot.z = 0
-        rot.normalize()
-        dir.applyQuaternion(rot)
+        if (!player.inPush) {
+            let rot = player.angle.clone()
+            rot.x = 0
+            rot.z = 0
+            rot.normalize()
+            dir.applyQuaternion(rot)
+        }
 
         dir.x = clamp(dir.x, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
         dir.z = clamp(dir.z, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
@@ -213,8 +279,8 @@ class Game {
         let acceleration = player.acceleration
         let velocity = player.velocity
 
-        // if the player's moving...
-        if (player.moving) {
+        // if the player's moving and/or in the air...
+        if (player.moving || !player.onFloor) {
             verlet2(dt, acceleration, velocity)
         }
         // otherwise, friction
@@ -243,7 +309,32 @@ class Game {
         fixedVec(player.position)
 
     }
-    
+
+    /* lookingAt( player, player ) => bool
+        Check if p1's view angle is pointing at p2.
+     */
+    lookingAt(p1, p2) {
+
+        // first, check distance
+        if (p1.position.distanceTo(p2.position) > PUSH_DISTANCE) {
+            return false
+        }
+
+        // vector from p1 to p2
+        let p = p2.position.clone().sub(p1.position)
+        // vector of p1's view angle
+        let v = new THREE.Vector3(0, 0, -1)
+        v.applyQuaternion(p1.angle)
+
+        let difference = v.angleTo(p)
+        if (difference < PUSH_RADIUS) {
+            return v.normalize()
+        } else {
+            return false
+        }
+
+    }
+
 }
 
 /* fixedVec( vector ) => void

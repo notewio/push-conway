@@ -47,6 +47,9 @@ class Server extends Core.Game {
         this.currentTime = t
 
         for (const [id, player] of Object.entries(this.state.players)) {
+            super.updatePlayer0(this.dt, player)
+        }
+        for (const [id, player] of Object.entries(this.state.players)) {
             super.updatePlayer1(this.dt, player)
         }
         for (const [id, player] of Object.entries(this.state.players)) {

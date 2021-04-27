@@ -125,6 +125,8 @@ class Client extends Core.Game {
             false
         )
         document.addEventListener("keyup", this.onKeyReleased.bind(this), false)
+        document.addEventListener("mousedown", this.onMouseDown.bind(this), false)
+        document.addEventListener("mouseup", this.onMouseUp.bind(this), false)
 
         this.keysPressed = {}
 
@@ -225,6 +227,7 @@ class Client extends Core.Game {
                 1000
 
             self.inputs.push(this.selfInputs[firstIndex])
+            super.updatePlayer0(dt, self)
             super.updatePlayer1(dt, self)
             super.updatePlayer2(dt, self)
 
@@ -301,6 +304,22 @@ class Client extends Core.Game {
 
     }
 
+    onMouseDown(event) {
+
+        if (event.button == 0 && this.pointerControls.isLocked) {
+            this.keysPressed[Core.CONTROLS["lmb"]] = true
+        }
+
+    }
+
+    onMouseUp(event) {
+
+        if (event.button == 0 && this.pointerControls.isLocked) {
+            this.keysPressed[Core.CONTROLS["lmb"]] = false
+        }
+
+    }
+
     // Send input packet to server
     sendInput() {
 
@@ -315,6 +334,10 @@ class Client extends Core.Game {
 
         if (this.keysPressed.j) {
             input.upmove = 1
+        }
+
+        if (this.keysPressed.a) {
+            input.attack = 1
         }
 
         this.camera.quaternion.toArray(input.angle)
