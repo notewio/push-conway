@@ -20,6 +20,11 @@ const FRICTION_ACCEL = -PLAYER_ACCEL/4
 const GRAVITY_ACCEL = -9.8
 const XZ_VELOCITY_CLAMP = 4
 
+// Sizes.
+const GRID_SIZE = 4
+const WORLD_SIZE = 32
+const PLAYER_SIZE = 1
+
 
 // Class representing a user input.
 class Input {
@@ -51,6 +56,8 @@ class Player {
         this.lastInput = 0
         this.moving = false
 
+        this.id
+
     }
 
     /* three() => void
@@ -61,6 +68,14 @@ class Player {
         this.geometry = new THREE.BoxGeometry()
         this.material = new THREE.MeshPhongMaterial({ color: 0x00ff00 })
         this.cube = new THREE.Mesh(this.geometry, this.material)
+
+        this.cellGeometry = new THREE.BoxGeometry( GRID_SIZE, GRID_SIZE, GRID_SIZE )
+        this.cellMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffff00,
+            transparent: true,
+            opacity: 0.2
+        })
+        this.cellCube = new THREE.Mesh(this.cellGeometry, this.cellMaterial)
 
     }
 
@@ -119,12 +134,40 @@ class Game {
         let newPos = player.position.clone().add(dir)
 
         // world borders
-        if (newPos.y < 0) { dir.y = -oldPos.y; player.velocity.y = 0 }
+        if (newPos.y <= 0) { dir.y = -oldPos.y; player.velocity.y = 0 }
 
-        if (newPos.x < -32) { dir.x = -32 - oldPos.x; player.velocity.x = 0 }
-        if (newPos.x >  32) { dir.x =  32 - oldPos.x; player.velocity.x = 0 }
-        if (newPos.z < -32) { dir.z = -32 - oldPos.z; player.velocity.z = 0 }
-        if (newPos.z >  32) { dir.z =  32 - oldPos.z; player.velocity.z = 0 }
+        let lb = -WORLD_SIZE + PLAYER_SIZE,
+            rb =  WORLD_SIZE - PLAYER_SIZE
+        if (newPos.x <= lb) { dir.x = lb - oldPos.x }
+        if (newPos.x >= rb) { dir.x = rb - oldPos.x }
+        if (newPos.z <= lb) { dir.z = lb - oldPos.z }
+        if (newPos.z >= rb) { dir.z = rb - oldPos.z }
+
+        newPos = player.position.clone().add(dir)
+
+        for (const [id, other] of Object.entries(this.state.players)) {
+            if (id == player.id) { continue }
+
+            let sx = snapToGrid(other.position.x) - PLAYER_SIZE,
+                sy = snapToGrid(other.position.y) - PLAYER_SIZE,
+                sz = snapToGrid(other.position.z) - PLAYER_SIZE
+            let mx = sx + GRID_SIZE + 2*PLAYER_SIZE, // NOTE: what??? it still goes right up against the player if I leave it as 1
+                my = sy + GRID_SIZE + 2*PLAYER_SIZE,
+                mz = sz + GRID_SIZE + 2*PLAYER_SIZE
+
+            if (sx <= newPos.x && mx >= newPos.x &&
+                sy <= newPos.y && my >= newPos.y &&
+                sz <= newPos.z && mz >= newPos.z) {
+
+                if (oldPos.x <= sx) { dir.x = sx - oldPos.x }
+                if (oldPos.x >= mx) { dir.x = mx - oldPos.x }
+                if (oldPos.y <= sy) { dir.y = sy - oldPos.y }
+                if (oldPos.y >= my) { dir.y = my - oldPos.y }
+                if (oldPos.z <= sz) { dir.z = sz - oldPos.z }
+                if (oldPos.z >= mz) { dir.z = mz - oldPos.z }
+
+            }
+        }
     }
 
     /* updatePlayer1( number, Player ) => void
@@ -286,9 +329,17 @@ function sphere_interp (q1, q2) {
 
 }
 
+/* snapToGrid( number ) => number
+    Round a position to the grid.
+ */
+function snapToGrid ( n ) {
+    return Math.floor(n / GRID_SIZE) * GRID_SIZE
+}
+
 
 export {
-    DT, CONTROLS, PLAYER_ACCEL, FRICTION_ACCEL, XZ_VELOCITY_CLAMP,
+    DT, CONTROLS, PLAYER_ACCEL, FRICTION_ACCEL, XZ_VELOCITY_CLAMP, GRID_SIZE,
+    WORLD_SIZE,
     Input, Player, State, Game,
-    fixedVec, fixedQuat, verlet1, verlet2, interp, sphere_interp
+    fixedVec, fixedQuat, verlet1, verlet2, interp, sphere_interp, snapToGrid
 }

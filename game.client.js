@@ -9,6 +9,9 @@ const LOADER = new GLTFLoader()
 const INPUT_BUFFER_SIZE = 100
 const SERVER_UPDATE_BUFFER_SIZE = 100
 
+const GRID_SIZE = Core.GRID_SIZE
+const WORLD_SIZE = Core.WORLD_SIZE
+
 
 class Client extends Core.Game {
 
@@ -73,6 +76,26 @@ class Client extends Core.Game {
                 console.error(error)
             })
 
+                // Grid
+            let cube = new THREE.BoxGeometry( GRID_SIZE, GRID_SIZE, GRID_SIZE )
+            let geometry = new THREE.EdgesGeometry( cube )
+            let mat = new THREE.LineBasicMaterial( {
+                color: 0xf5e942,
+                linewidth: 1,
+                transparent: true,
+                opacity: 0.05
+            } );
+            let min = -WORLD_SIZE + GRID_SIZE / 2
+            for (let y = 1; y < WORLD_SIZE; y += GRID_SIZE) {
+                for (let x = min; x < WORLD_SIZE; x += GRID_SIZE) {
+                    for (let z = min; z < WORLD_SIZE; z += GRID_SIZE) {
+                        let wireframe = new THREE.LineSegments( geometry, mat );
+                        wireframe.position.set( x, y, z )
+                        this.scene.add( wireframe );
+                    }
+                }
+            }
+
         document.body.appendChild( this.renderer.domElement )
 
         // resize screen
@@ -132,9 +155,12 @@ class Client extends Core.Game {
             Core.interp(statePlayer.position, player.position)
             if (id != this.id) {
                 statePlayer.cube.position.copy(statePlayer.position)
-            }
+                statePlayer.cellCube.position.set(
+                    Core.snapToGrid(statePlayer.cube.position.x) + 2,
+                    Core.snapToGrid(statePlayer.cube.position.y) + 1,
+                    Core.snapToGrid(statePlayer.cube.position.z) + 2
+                )
 
-            if (id != this.id) {
                 let newAngle = new THREE.Quaternion()
                 newAngle.fromArray(player.angle)
                 Core.sphere_interp(statePlayer.angle, newAngle)
@@ -207,12 +233,18 @@ class Client extends Core.Game {
         if (id != this.id) {
             this.state.players[id].three()
             this.scene.add(this.state.players[id].cube)
+            this.scene.add(this.state.players[id].cellCube)
         }
+        this.state.players[id].id = id
     }
 
     // Process another player disconnecting
     playerDisconnected(id) {
         let cube = this.state.players[id].cube
+        cube.geometry.dispose()
+        cube.material.dispose()
+        this.scene.remove( cube )
+        cube = this.state.players[id].cellCube
         cube.geometry.dispose()
         cube.material.dispose()
         this.scene.remove( cube )

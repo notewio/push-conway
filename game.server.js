@@ -23,6 +23,7 @@ class Server extends Core.Game {
     // add a player to the game
     addPlayer(id) {
         this.state.players[id] = new Core.Player()
+        this.state.players[id].id = id
         this.socket.emit("playerconnected", id)
     }
 
