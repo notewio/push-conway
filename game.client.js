@@ -1,5 +1,5 @@
-import * as THREE from "./lib/three.module.js";
-import * as Core from "./game.core.js";
+import * as THREE from "./lib/three.module.js"
+import * as Core from "./game.core.js"
 import { GLTFLoader } from "./lib/GLTFLoader.js"
 import { PointerLockControls } from "./lib/PointerLockControls.js"
 
@@ -16,6 +16,7 @@ const WORLD_SIZE = Core.WORLD_SIZE
 class Client extends Core.Game {
 
     constructor() {
+
         super()
 
         this.selfInputs = []
@@ -33,9 +34,10 @@ class Client extends Core.Game {
         setInterval(this.sendInput.bind(this), Core.DT)
 
     }
+
     initSocket() {
 
-        this.socket = io.connect('/', { "reconnection": false }) // TODO: dev only
+        this.socket = io.connect("/", { reconnection: false }) // TODO: dev only
         this.id
 
         this.socket.on("onconnected", this.connected.bind(this))
@@ -46,90 +48,107 @@ class Client extends Core.Game {
         this.socket.on("playerdisconnected", this.playerDisconnected.bind(this))
 
     }
+
     initThree() {
 
         this.scene = new THREE.Scene()
         this.camera = new THREE.PerspectiveCamera(
-            75, window.innerWidth / window.innerHeight,
-            0.1, 1000
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
         )
 
         this.renderer = new THREE.WebGLRenderer()
         this.renderer.setSize(window.innerWidth, window.innerHeight)
 
-                // Lights
-            this.scene.background = new THREE.Color( 0xa6ecea );
-            this.scene.fog = new THREE.Fog( 0xffffff, 0, 300 );
+        // Lights
+        this.scene.background = new THREE.Color(0xa6ecea)
+        this.scene.fog = new THREE.Fog(0xffffff, 0, 300)
 
-            const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
-            light.position.set( 0.5, 1, 0.75 );
-            this.scene.add( light );
+        const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75)
+        light.position.set(0.5, 1, 0.75)
+        this.scene.add(light)
 
-            const spotlight = new THREE.SpotLight( 0xffa95c, 2 );
-            spotlight.position.set( -50, 50, 50 );
-            this.scene.add( spotlight );
+        const spotlight = new THREE.SpotLight(0xffa95c, 2)
+        spotlight.position.set(-50, 50, 50)
+        this.scene.add(spotlight)
 
-                // World
-            LOADER.load( "./world/world.glb", function ( gltf ) {
-                this.scene.add( gltf.scene )
-            }.bind(this), undefined, function ( error ) {
+        // World
+        LOADER.load(
+            "./world/world.glb",
+            function (gltf) {
+                this.scene.add(gltf.scene)
+            }.bind(this),
+            undefined,
+            function (error) {
                 console.error(error)
-            })
+            }
+        )
 
-                // Grid
-            let cube = new THREE.BoxGeometry( GRID_SIZE, GRID_SIZE, GRID_SIZE )
-            let geometry = new THREE.EdgesGeometry( cube )
-            let mat = new THREE.LineBasicMaterial( {
-                color: 0xf5e942,
-                linewidth: 1,
-                transparent: true,
-                opacity: 0.05
-            } );
-            let min = -WORLD_SIZE + GRID_SIZE / 2
-            for (let y = 1; y < WORLD_SIZE; y += GRID_SIZE) {
-                for (let x = min; x < WORLD_SIZE; x += GRID_SIZE) {
-                    for (let z = min; z < WORLD_SIZE; z += GRID_SIZE) {
-                        let wireframe = new THREE.LineSegments( geometry, mat );
-                        wireframe.position.set( x, y, z )
-                        this.scene.add( wireframe );
-                    }
+        // Grid
+        let cube = new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, GRID_SIZE)
+        let geometry = new THREE.EdgesGeometry(cube)
+        let mat = new THREE.LineBasicMaterial({
+            color: 0xf5e942,
+            linewidth: 1,
+            transparent: true,
+            opacity: 0.05,
+        })
+        let min = -WORLD_SIZE + GRID_SIZE / 2
+        for (let y = 1; y < WORLD_SIZE; y += GRID_SIZE) {
+            for (let x = min; x < WORLD_SIZE; x += GRID_SIZE) {
+                for (let z = min; z < WORLD_SIZE; z += GRID_SIZE) {
+                    let wireframe = new THREE.LineSegments(geometry, mat)
+                    wireframe.position.set(x, y, z)
+                    this.scene.add(wireframe)
                 }
             }
+        }
 
-        document.body.appendChild( this.renderer.domElement )
+        document.body.appendChild(this.renderer.domElement)
 
         // resize screen
-        window.addEventListener( 'resize', () => {
-             this.camera.aspect = window.innerWidth / window.innerHeight
-             this.camera.updateProjectionMatrix()
-             this.renderer.setSize( window.innerWidth, window.innerHeight )
+        window.addEventListener("resize", () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight
+            this.camera.updateProjectionMatrix()
+            this.renderer.setSize(window.innerWidth, window.innerHeight)
         })
 
     }
-    initKeyboard () {
 
-        document.addEventListener( 'keydown', this.onKeyPressed.bind(this), false )
-        document.addEventListener( 'keyup', this.onKeyReleased.bind(this), false )
+    initKeyboard() {
+
+        document.addEventListener(
+            "keydown",
+            this.onKeyPressed.bind(this),
+            false
+        )
+        document.addEventListener("keyup", this.onKeyReleased.bind(this), false)
+
         this.keysPressed = {}
 
     }
+
     initMouse() {
 
-        this.pointerControls = new PointerLockControls(this.camera, document.body)
+        this.pointerControls = new PointerLockControls(
+            this.camera,
+            document.body
+        )
 
-        this.pointerControls.addEventListener( "lock", () => {
-             document.getElementById("blocker").style.display = "none"
+        this.pointerControls.addEventListener("lock", () => {
+            document.getElementById("blocker").style.display = "none"
         })
-        this.pointerControls.addEventListener( "unlock", () => {
-             document.getElementById("blocker").style.display = "block"
+        this.pointerControls.addEventListener("unlock", () => {
+            document.getElementById("blocker").style.display = "block"
         })
 
-        document.getElementById("blocker").addEventListener( "click", () => {
-             this.pointerControls.lock()
+        document.getElementById("blocker").addEventListener("click", () => {
+            this.pointerControls.lock()
         })
 
     }
-
 
     // When connected to server
     connected(data) {
@@ -145,7 +164,6 @@ class Client extends Core.Game {
         this.serverUpdates.push(data)
 
         for (const [id, player] of Object.entries(data.players)) {
-
             if (!(id in this.state.players)) {
                 this.playerConnected(id)
             }
@@ -166,7 +184,6 @@ class Client extends Core.Game {
                 Core.sphere_interp(statePlayer.angle, newAngle)
                 statePlayer.cube.rotation.setFromQuaternion(statePlayer.angle)
             }
-
         }
 
         this.prediction()
@@ -182,12 +199,13 @@ class Client extends Core.Game {
         }
 
         // latest state from the server
-        let fromState = this.serverUpdates[this.serverUpdates.length - 1].players[this.id]
+        let fromState = this.serverUpdates[this.serverUpdates.length - 1]
+            .players[this.id]
         let lastInput = fromState.lastInput
 
         // the index in this.selfInputs of the first input after lastInput
         let firstIndex = 0
-        for (let i = this.selfInputs.length-1; i > 0; i--) {
+        for (let i = this.selfInputs.length - 1; i > 0; i--) {
             if (this.selfInputs[i].time < lastInput) {
                 firstIndex = i + 1
                 break
@@ -199,10 +217,12 @@ class Client extends Core.Game {
         self.velocity.copy(fromState.velocity)
         self.position.copy(fromState.position)
 
-        let toState = new Core.Player()
         fromState.acceleration = new THREE.Vector3()
         while (true) {
-            let dt = (this.selfInputs[firstIndex].time - this.selfInputs[firstIndex-1].time) / 1000
+            let dt =
+                (this.selfInputs[firstIndex].time -
+                    this.selfInputs[firstIndex - 1].time) /
+                1000
 
             self.inputs.push(this.selfInputs[firstIndex])
             super.updatePlayer1(dt, self)
@@ -210,66 +230,75 @@ class Client extends Core.Game {
 
             firstIndex++
             // if (this was the most up to date "command")
-            if (firstIndex >= this.selfInputs.length) {
-                break
-            }
+            if (firstIndex >= this.selfInputs.length) { break }
         }
-
-        this.camera.position.copy(self.position)
 
         // clear out the buffers
         if (this.serverUpdates.length > SERVER_UPDATE_BUFFER_SIZE) {
-            this.serverUpdates.splice(0, this.serverUpdates.length-SERVER_UPDATE_BUFFER_SIZE)
+            this.serverUpdates.splice(
+                0, this.serverUpdates.length - SERVER_UPDATE_BUFFER_SIZE
+            )
         }
         if (this.selfInputs.length > INPUT_BUFFER_SIZE) {
-            this.selfInputs.splice(0, this.selfInputs.length-INPUT_BUFFER_SIZE)
+            this.selfInputs.splice(
+                0, this.selfInputs.length - INPUT_BUFFER_SIZE
+            )
         }
 
     }
 
-    // Process another player connecting
+    // Process another player connecting/disconnecting
     playerConnected(id) {
+
         this.state.players[id] = new Core.Player()
+        this.state.players[id].id = id
         if (id != this.id) {
             this.state.players[id].three()
             this.scene.add(this.state.players[id].cube)
             this.scene.add(this.state.players[id].cellCube)
         }
-        this.state.players[id].id = id
+
     }
 
-    // Process another player disconnecting
     playerDisconnected(id) {
-        let cube = this.state.players[id].cube
-        cube.geometry.dispose()
-        cube.material.dispose()
-        this.scene.remove( cube )
-        cube = this.state.players[id].cellCube
-        cube.geometry.dispose()
-        cube.material.dispose()
-        this.scene.remove( cube )
-        delete this.state.players[id]
-    }
 
+        this.scene.remove(this.state.players[id].cube)
+        this.scene.remove(this.state.players[id].cellCube)
+        delete this.state.players[id]
+
+    }
 
     // Render the scene
     render() {
+
         requestAnimationFrame((t) => this.render())
+        if (this.id in this.state.players) {
+            Core.interp(
+                this.camera.position,
+                this.state.players[this.id].position,
+                0.25
+            ) // NOTE: this is probably not the best way to get the smoothness, but I don't have any other ideas
+        }
         this.renderer.render(this.scene, this.camera)
+
     }
 
-
     onKeyPressed(event) {
+
         let keyCode = event.which
         if (keyCode in Core.CONTROLS) {
             this.keysPressed[Core.CONTROLS[keyCode]] = true
         }
+
     }
+
     onKeyReleased(event) {
+
         let keyCode = event.which
         if (keyCode in Core.CONTROLS) {
             this.keysPressed[Core.CONTROLS[keyCode]] = false
         }
+
     }
 
     // Send input packet to server
