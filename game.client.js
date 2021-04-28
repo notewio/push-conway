@@ -177,7 +177,7 @@ class Client extends Core.Game {
 
         for (const [id, player] of Object.entries(data.players)) {
             if (!(id in this.state.players)) {
-                this.playerConnected(id)
+                this.playerConnected({id: id, team: player.team})
             }
 
             let statePlayer = this.state.players[id]
@@ -268,12 +268,15 @@ class Client extends Core.Game {
     }
 
     // Process another player connecting/disconnecting
-    playerConnected(id) {
+    playerConnected(data) {
+
+        let id = data.id
+        let team = data.team
 
         this.state.players[id] = new Core.Player()
         this.state.players[id].id = id
         if (id != this.id) {
-            this.state.players[id].three()
+            this.state.players[id].three(team)
             this.scene.add(this.state.players[id].cube)
             this.scene.add(this.state.players[id].cellCube)
         }

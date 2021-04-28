@@ -52,7 +52,8 @@ class Input {
 
 // THREE materials
 const playerGeometry = new THREE.BoxGeometry()
-const playerMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 })
+const redMaterial = new THREE.MeshPhongMaterial({ color: 0xfe5757 })
+const blueMaterial = new THREE.MeshPhongMaterial({ color: 0x5757fe })
 const cellGeometry = new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, GRID_SIZE)
 const cellMaterial = new THREE.MeshBasicMaterial({
     color: 0xffff00,
@@ -82,14 +83,18 @@ class Player {
         this.onFloor = false
 
         this.id
+        this.team = 0
 
     }
 
-    /* three() => void
+    /* three( number ) => void
         Client-side function that creates a cube to show the player on screen.
+            Colors the cube according to team affiliation.
      */
-    three() {
-        this.cube = new THREE.Mesh(playerGeometry, playerMaterial)
+    three(team) {
+        this.cube = new THREE.Mesh(
+            playerGeometry,
+            team == 0 ? redMaterial : blueMaterial)
         this.cellCube = new THREE.Mesh(cellGeometry, cellMaterial)
     }
 

@@ -17,6 +17,8 @@ class Server extends Core.Game {
         setInterval(this.updatePhysics.bind(this), Core.DT)
         setInterval(this.broadcast.bind(this), SERVER_BROADCAST_DT)
 
+        this.teams = { red: 0, blue: 0 }
+
     }
 
     // add a player to the game
@@ -24,7 +26,16 @@ class Server extends Core.Game {
 
         this.state.players[id] = new Core.Player()
         this.state.players[id].id = id
-        this.socket.emit("playerconnected", id)
+
+        if (this.teams.red > this.teams.blue) {
+            this.state.players[id].team = 1
+            this.teams.blue++
+        } else {
+            this.state.players[id].team = 0
+            this.teams.red++
+        }
+
+        this.socket.emit("playerconnected", { id: id, team: this.state.players[id].team })
 
     }
 
@@ -68,7 +79,8 @@ class Server extends Core.Game {
                 velocity: player.velocity,
                 angle: player.angle.toArray(), // quaternion, doesn't send correctly across network so have to convert to array
                 lastInput: player.lastInput,
-                ready: this.lastState.time - player.lastPush > Core.PUSH_COOLDOWN
+                ready: this.lastState.time - player.lastPush > Core.PUSH_COOLDOWN,
+                team: player.team
             }
         }
 
