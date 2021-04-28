@@ -174,7 +174,9 @@ class Client extends Core.Game {
     initHUD() {
 
         this.hud = {
-            ready: document.getElementById("ready")
+            ready: document.getElementById("ready"),
+            redsurround: document.getElementById("redsurround"),
+            bluesurround: document.getElementById("blusurround")
         }
 
     }
@@ -215,6 +217,8 @@ class Client extends Core.Game {
             }
         }
 
+        this.prediction()
+
         this.hud.ready.innerText =
             data.players[this.id].ready
             ? "ready" : "waiting"
@@ -222,7 +226,9 @@ class Client extends Core.Game {
             data.players[this.id].ready
             ? "#8f8" : "#ff8")
 
-        this.prediction()
+        const [red, blue] = super.countSurroundings(this.state.players[this.id])
+        this.hud.redsurround.innerText = red
+        this.hud.bluesurround.innerText = blue
 
     }
 
@@ -292,6 +298,7 @@ class Client extends Core.Game {
 
         this.state.players[id] = new Core.Player()
         this.state.players[id].id = id
+        this.state.players[id].team = team
         if (id != this.id) {
             this.state.players[id].three(team)
             this.scene.add(this.state.players[id].cube)
@@ -319,7 +326,6 @@ class Client extends Core.Game {
                 0.25
             ) // NOTE: this is probably not the best way to get the smoothness, but I don't have any other ideas
         }
-        //this.renderer.render(this.scene, this.camera)
         this.composer.render()
 
     }

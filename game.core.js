@@ -343,6 +343,34 @@ class Game {
 
     }
 
+    /* countSurroundings( player ) => [number, number]
+        Count the number of players on each team in the immediate surroundings
+            of p1.
+     */
+    countSurroundings(p1) {
+
+        let x = snapToGrid(p1.position.x),
+            y = snapToGrid(p1.position.y),
+            z = snapToGrid(p1.position.z)
+        let red = 0,
+            blue = 0
+        for (const [id, player] of Object.entries(this.state.players)) {
+            if (id == p1.id) { continue }
+            let px = snapToGrid(player.position.x),
+                py = snapToGrid(player.position.y),
+                pz = snapToGrid(player.position.z)
+            if (Math.abs(px - x) <= 4 &&
+                Math.abs(py - y) <= 4 &&
+                Math.abs(pz - z) <= 4
+            ) {
+                if (player.team == 0) { red++ }
+                else { blue++ }
+            }
+        }
+        return [red, blue]
+
+    }
+
 }
 
 /* fixedVec( vector ) => void
