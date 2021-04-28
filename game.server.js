@@ -61,15 +61,16 @@ class Server extends Core.Game {
     // update the server's state to be sent out
     updateState() {
 
+        this.lastState.time = new Date().getTime()
         for (const [id, player] of Object.entries(this.state.players)) {
             this.lastState.players[id] = {
                 position: player.position,
                 velocity: player.velocity,
                 angle: player.angle.toArray(), // quaternion, doesn't send correctly across network so have to convert to array
                 lastInput: player.lastInput,
+                ready: this.lastState.time - player.lastPush > Core.PUSH_COOLDOWN
             }
         }
-        this.lastState.time = new Date().getTime()
 
     }
 

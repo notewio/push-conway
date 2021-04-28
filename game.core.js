@@ -27,6 +27,9 @@ const PLAYER_SIZE = 1
 const PUSH_DISTANCE = 6
 const PUSH_RADIUS = Math.PI / 3
 
+// Misc.
+const PUSH_COOLDOWN = 5000
+
 
 // Class representing a user input.
 class Input {
@@ -223,7 +226,7 @@ class Game {
         }
         player.inputs = []
 
-        if (player.pushing && new Date().getTime() - player.lastPush > 5000) {// TODO: nasty calls to getTime, find some cleaner way to use the time...
+        if (player.pushing && new Date().getTime() - player.lastPush > PUSH_COOLDOWN) {// TODO: nasty calls to getTime, find some cleaner way to use the time...
             for (const [id, other] of Object.entries(this.state.players)) {
                 if (other.id == player.id) { continue }
                 let looking = this.lookingAt(player, other)
@@ -420,8 +423,7 @@ function snapToGrid(n) {
 }
 
 export {
-    DT, CONTROLS, PLAYER_ACCEL, FRICTION_ACCEL, XZ_VELOCITY_CLAMP, GRID_SIZE,
-    WORLD_SIZE,
+    DT, CONTROLS, GRID_SIZE, WORLD_SIZE, PUSH_COOLDOWN,
     Input, Player, State, Game,
-    fixedVec, fixedQuat, verlet1, verlet2, interp, sphere_interp, snapToGrid,
+    fixedQuat, interp, sphere_interp, snapToGrid,
 }

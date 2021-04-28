@@ -28,3 +28,53 @@ canvas {
     padding: 10vh 10vw;
     box-sizing: border-box;
 }
+#hud {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 99;
+    padding: 36px 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 24px;
+    text-shadow: 1px 1px #212121;
+}
+#hud > * {
+    padding: 0;
+    margin: 0;
+}
+#crosshair {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: calc(50vh - 5px);
+    left: calc(50vw - 5px);
+    border-radius: 10px;
+    border: 2px solid white;
+    box-sizing: border-box;
+}
+#ready {
+    position: absolute;
+    width: 100vw;
+    height: 10px;
+    top: calc(50vh + 10px);
+    left: 0;
+    text-align: center;
+    box-sizing: border-box;
+    color: #8f8;
+}
+.spacer {
+    flex: 1;
+}
+#redsurround, #blusurround {
+    margin: 0 2em;
+    padding: 0.5em;
+}
+#redsurround {
+    background: rgba(255, 128, 128, 0.9);
+}
+#blusurround {
+    background: rgba(128, 128, 255, 0.9);
+}

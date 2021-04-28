@@ -26,6 +26,8 @@ class Client extends Core.Game {
 
         this.initSocket()
 
+        this.initHUD()
+
         this.initThree()
         this.render()
 
@@ -152,6 +154,14 @@ class Client extends Core.Game {
 
     }
 
+    initHUD() {
+
+        this.hud = {
+            ready: document.getElementById("ready")
+        }
+
+    }
+
     // When connected to server
     connected(data) {
 
@@ -187,6 +197,13 @@ class Client extends Core.Game {
                 statePlayer.cube.rotation.setFromQuaternion(statePlayer.angle)
             }
         }
+
+        this.hud.ready.innerText =
+            data.players[this.id].ready
+            ? "ready" : "waiting"
+        this.hud.ready.style = "color: " + (
+            data.players[this.id].ready
+            ? "#8f8" : "#ff8")
 
         this.prediction()
 
