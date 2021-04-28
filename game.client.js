@@ -1,7 +1,11 @@
-import * as THREE from "./lib/three.module.js"
+import * as THREE from "./three/build/three.module.js"
 import * as Core from "./game.core.js"
-import { GLTFLoader } from "./lib/GLTFLoader.js"
-import { PointerLockControls } from "./lib/PointerLockControls.js"
+import { GLTFLoader } from "./three/examples/jsm/loaders/GLTFLoader.js"
+import { PointerLockControls } from "./three/examples/jsm/controls/PointerLockControls.js"
+
+import { EffectComposer } from './three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from './three/examples/jsm/postprocessing/RenderPass.js';
+import { SMAAPass } from './three/examples/jsm/postprocessing/SMAAPass.js';
 
 
 const LOADER = new GLTFLoader()
@@ -72,7 +76,7 @@ class Client extends Core.Game {
         light.position.set(0.5, 1, 0.75)
         this.scene.add(light)
 
-        const spotlight = new THREE.SpotLight(0xffa95c, 2)
+        const spotlight = new THREE.SpotLight(0xcedeff, 1)
         spotlight.position.set(-50, 50, 50)
         this.scene.add(spotlight)
 
@@ -108,6 +112,8 @@ class Client extends Core.Game {
             }
         }
 
+        this.initComposer()
+
         document.body.appendChild(this.renderer.domElement)
 
         // resize screen
@@ -115,7 +121,18 @@ class Client extends Core.Game {
             this.camera.aspect = window.innerWidth / window.innerHeight
             this.camera.updateProjectionMatrix()
             this.renderer.setSize(window.innerWidth, window.innerHeight)
+            this.initComposer()
         })
+
+    }
+
+    initComposer() {
+
+        this.composer = new EffectComposer(this.renderer)
+        const renderPass = new RenderPass(this.scene, this.camera)
+        this.composer.addPass(renderPass)
+        const antialiasPass = new SMAAPass()
+        this.composer.addPass(antialiasPass)
 
     }
 
@@ -302,7 +319,8 @@ class Client extends Core.Game {
                 0.25
             ) // NOTE: this is probably not the best way to get the smoothness, but I don't have any other ideas
         }
-        this.renderer.render(this.scene, this.camera)
+        //this.renderer.render(this.scene, this.camera)
+        this.composer.render()
 
     }
 

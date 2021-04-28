@@ -1,4 +1,4 @@
-import * as THREE from "./lib/three.module.js"
+import * as THREE from "./three/build/three.module.js"
 
 
 // The fixed delta time for physics updates.
