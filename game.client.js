@@ -3,9 +3,9 @@ import * as Core from "./game.core.js"
 import { GLTFLoader } from "./three/examples/jsm/loaders/GLTFLoader.js"
 import { PointerLockControls } from "./three/examples/jsm/controls/PointerLockControls.js"
 
-import { EffectComposer } from './three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from './three/examples/jsm/postprocessing/RenderPass.js';
-import { SMAAPass } from './three/examples/jsm/postprocessing/SMAAPass.js';
+import { EffectComposer } from './three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from './three/examples/jsm/postprocessing/RenderPass.js'
+import { SMAAPass } from './three/examples/jsm/postprocessing/SMAAPass.js'
 
 
 const LOADER = new GLTFLoader()
@@ -326,6 +326,18 @@ class Client extends Core.Game {
                 0.25
             ) // NOTE: this is probably not the best way to get the smoothness, but I don't have any other ideas
         }
+
+        let selectedObjects = []
+        for (const [id, player] of Object.entries(this.state.players)) {
+            if (id == this.id) { continue }
+            let looking = super.lookingAt(this.state.players[this.id], player)
+            if (looking != false) {
+                player.cube.material.color.setHex(player.team == 0 ? 0xfe8888 : 0x8888fe)
+            } else {
+                player.cube.material.color.setHex(player.team == 0 ? 0xfe5757 : 0x5757fe)
+            }
+        }
+
         this.composer.render()
 
     }

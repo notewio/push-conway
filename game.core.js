@@ -16,7 +16,7 @@ const CONTROLS = {
 const PLAYER_ACCEL = 60
 const FRICTION_ACCEL = -PLAYER_ACCEL / 6
 const GRAVITY_ACCEL = -9.8
-const XZ_VELOCITY_CLAMP = 4
+const XZ_VELOCITY_CLAMP = 4.5
 const JUMP_VELOCITY = 5
 const PUSH_VELOCITY = 18
 
@@ -25,7 +25,7 @@ const GRID_SIZE = 4
 const WORLD_SIZE = 32
 const PLAYER_SIZE = 1
 const PUSH_DISTANCE = 6
-const PUSH_RADIUS = Math.PI / 3
+const PUSH_RADIUS = Math.PI / 3.5
 
 // Misc.
 const PUSH_COOLDOWN = 5000
@@ -92,9 +92,10 @@ class Player {
             Colors the cube according to team affiliation.
      */
     three(team) {
-        this.cube = new THREE.Mesh(
-            playerGeometry,
-            team == 0 ? redMaterial : blueMaterial)
+        this.material = new THREE.MeshPhongMaterial({
+            color: team == 0 ? 0xfe5757 : 0x5757fe
+        })
+        this.cube = new THREE.Mesh(playerGeometry, this.material)
         this.cellCube = new THREE.Mesh(cellGeometry, cellMaterial)
     }
 
