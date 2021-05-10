@@ -70,11 +70,16 @@ class Client extends Core.Game {
 
         // Lights
         this.scene.background = new THREE.Color(0xa6ecea)
-        this.scene.fog = new THREE.Fog(0xffffff, 0, 300)
+        this.scene.fog = new THREE.Fog(0xddddee, 0, 400)
 
         const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75)
         light.position.set(0.5, 1, 0.75)
         this.scene.add(light)
+
+        const sun = new THREE.DirectionalLight(0xeeeedd, 0.3)
+        sun.position.set(0, 10, 0)
+        sun.target.position.set(-5, 0, 0)
+        this.scene.add(sun)
 
         const spotlight = new THREE.SpotLight(0xcedeff, 1)
         spotlight.position.set(-50, 50, 50)
