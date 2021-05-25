@@ -19,6 +19,25 @@ class Server extends Core.Game {
 
         this.teams = { red: 0, blue: 0 }
 
+        this.grid = []
+        for (var x = -Core.WORLD_SIZE; x < Core.WORLD_SIZE; x += Core.GRID_SIZE) {
+            let a = []
+            for (var y = 0; y < Core.WORLD_SIZE; y += Core.GRID_SIZE) {
+                let b = []
+                for (var z = -Core.WORLD_SIZE; z < Core.WORLD_SIZE; z += Core.GRID_SIZE) {
+                    b.push(-1)
+                }
+                a.push(b)
+            }
+            this.grid.push(a)
+        }
+        // -1: empty
+        // 0/1: red/blue
+        this.respawns = { red: [], blue: [] }
+
+         // TODO: real timing
+        setInterval(this.conwayGeneration.bind(this), 3000)
+
     }
 
     // add a player to the game
@@ -80,7 +99,8 @@ class Server extends Core.Game {
                 angle: player.angle.toArray(), // quaternion, doesn't send correctly across network so have to convert to array
                 lastInput: player.lastInput,
                 ready: this.lastState.time - player.lastPush > Core.PUSH_COOLDOWN,
-                team: player.team
+                team: player.team,
+                dead: player.dead
             }
         }
 
@@ -93,6 +113,139 @@ class Server extends Core.Game {
         this.socket.emit("serverupdate", this.lastState)
 
     }
+
+
+    // countSurroundings server side uses our grid variable instead of players,
+    // this way we can easily check for empty cells
+    countSurroundings(px, py, pz) {
+
+        let red = 0, blue = 0
+        for (var x = -1; x <= 1; x++) {
+            let nx = px + x;
+            if (nx < 0 || nx >= this.grid.length) { continue }
+
+            for (var y = -1; y <= 1; y++) {
+                let ny = py + y;
+                if (ny < 0 || ny >= this.grid[0].length) { continue }
+
+                for (var z = -1; z <= 1; z++) {
+                    let nz = pz + z;
+                    if (nz < 0 || nz >= this.grid.length) { continue }
+                    if (x == 0 && y == 0 && z == 0) { continue }
+
+                    let np = this.grid[nx][ny][nz]
+                    if (np == 0) { red++  } else
+                    if (np == 1) { blue++ }
+                }
+            }
+        }
+
+        return [red, blue]
+
+    }
+
+
+    /* conwayGeneration() => void
+        Move forward one generation in the conway's game of life simulation,
+            update valuable respawn points and whether or not a player is dead
+    */
+    conwayGeneration() {
+        // reset the grid
+        for (var i = 0; i < this.grid.length; i++) {
+            for (var j = 0; j < this.grid[i].length; j++) {
+                for (var k = 0; k < this.grid[i][j].length; k++) {
+                    this.grid[i][j][k] = -1
+                }
+            }
+        }
+
+        // fill in players
+        for (const [id, player] of Object.entries(this.state.players)) {
+            let x = (Core.snapToGrid(player.position.x) + Core.WORLD_SIZE) / Core.GRID_SIZE,
+                y = Core.snapToGrid(player.position.y) / Core.GRID_SIZE,
+                z = (Core.snapToGrid(player.position.z) + Core.WORLD_SIZE) / Core.GRID_SIZE
+            this.grid[x][y][z] = player.team
+            player.grid = [x, y, z]
+        }
+
+        // check cells
+        let birthsDone = [] // keep this so we don't redo any cells
+        for (const [id, player] of Object.entries(this.state.players)) {
+
+            let [self, other] = this.countSurroundings(...player.grid)
+
+            if (player.team == 1) {
+                let temp = self
+                self = other
+                other = temp
+            }
+
+            // implement rules
+            // only teammates?
+            if (other == 0) {
+                player.dead = self < 2 || self > 3
+            } else {
+                player.dead = other - self <= 0
+            }
+
+            // births
+            for (var x = -1; x <= 1; x++) {
+                let nx = player.grid[0] + x;
+                if (nx < 0 || nx >= this.grid.length) { continue }
+
+                for (var y = -1; y <= 1; y++) {
+                    let ny = player.grid[1] + y;
+                    if (ny < 0 || ny >= this.grid[0].length) { continue }
+
+                    for (var z = -1; z <= 1; z++) {
+                        let nz = player.grid[2] + z;
+                        let n = [nx, ny, nz].join()
+                        if (birthsDone.includes(n)) { continue }
+                        if (nz < 0 || nz >= this.grid.length) { continue }
+                        if (x == 0 && y == 0 && z == 0) { continue }
+
+                        let np = this.grid[nx][ny][nz]
+                        if (np >= 0) { continue }
+
+                        const [red, blue] = this.countSurroundings(nx, ny, nz)
+
+                        // implement rules
+                        if (red == 3 && blue == 0) {
+                            let r = [nx, ny, nz]
+                            if (!(arrayIncludes(this.respawns.red, r) || arrayIncludes(this.respawns.blue, r))) {
+                                this.respawns.red.push(r)
+                            }
+                        } else if (blue == 3 && red == 0) {
+                            let r = [nx, ny, nz]
+                            if (!(arrayIncludes(this.respawns.red, r) || arrayIncludes(this.respawns.blue, r))) {
+                                this.respawns.blue.push(r)
+                            }
+                        }
+                        birthsDone.push(n)
+                    }
+                }
+            }
+        }
+
+        // broadcast the generation update
+        this.broadcastGeneration()
+    }
+
+    broadcastGeneration() {
+        let data = {
+            respawns: this.respawns
+        }
+        this.socket.emit("generation", data)
+    }
+}
+
+function arrayIncludes(array, item) {
+    var item_as_string = JSON.stringify(item);
+
+    var contains = array.some(function(ele){
+        return JSON.stringify(ele) === item_as_string;
+    });
+    return contains;
 }
 
 

@@ -53,6 +53,8 @@ class Client extends Core.Game {
         this.socket.on("playerconnected", this.playerConnected.bind(this))
         this.socket.on("playerdisconnected", this.playerDisconnected.bind(this))
 
+        this.socket.on("generation", this.generation.bind(this))
+
     }
 
     initThree() {
@@ -115,6 +117,44 @@ class Client extends Core.Game {
                     this.scene.add(wireframe)
                 }
             }
+        }
+
+        // respawns
+        const respawnGeometry = new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, GRID_SIZE)
+        const redRespawn = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.2,
+        })
+        const blueRespawn = new THREE.MeshBasicMaterial({
+            color: 0x0000ff,
+            transparent: true,
+            opacity: 0.2,
+        })
+        this.respawns = { red: [], blue: [] }
+        for (var x = min; x < WORLD_SIZE; x += GRID_SIZE) {
+            let a = []
+            let c = []
+            for (var y = 1; y < WORLD_SIZE; y += GRID_SIZE) {
+                let b = []
+                let d = []
+                for (var z = min; z < WORLD_SIZE; z += GRID_SIZE) {
+                    let r = new THREE.Mesh(respawnGeometry, redRespawn)
+                    let bl = new THREE.Mesh(respawnGeometry, blueRespawn)
+                    r.position.set(x, y, z)
+                    bl.position.set(x, y, z)
+                    r.visible = false
+                    bl.visible = false
+                    this.scene.add(r)
+                    this.scene.add(bl)
+                    b.push(r)
+                    d.push(bl)
+                }
+                a.push(b)
+                c.push(d)
+            }
+            this.respawns.red.push(a)
+            this.respawns.blue.push(c)
         }
 
         this.initComposer()
@@ -231,7 +271,7 @@ class Client extends Core.Game {
             data.players[this.id].ready
             ? "#8f8" : "#ff8")
 
-        const [red, blue] = super.countSurroundings(this.state.players[this.id])
+        const [red, blue] = this.countSurroundings(this.state.players[this.id])
         this.hud.redsurround.innerText = red
         this.hud.bluesurround.innerText = blue
 
@@ -407,6 +447,59 @@ class Client extends Core.Game {
         this.socket.emit("input", input)
         this.selfInputs.push(input)
 
+    }
+
+    /* countSurroundings( player ) => [number, number]
+        Count the number of players on each team in the immediate surroundings
+            of p1.
+     */
+    countSurroundings(p1) {
+
+        let x = Core.snapToGrid(p1.position.x),
+            y = Core.snapToGrid(p1.position.y),
+            z = Core.snapToGrid(p1.position.z)
+        let red = 0,
+            blue = 0
+        for (const [id, player] of Object.entries(this.state.players)) {
+            if (id == p1.id) { continue }
+            let px = Core.snapToGrid(player.position.x),
+                py = Core.snapToGrid(player.position.y),
+                pz = Core.snapToGrid(player.position.z)
+            if (Math.abs(px - x) <= 4 &&
+                Math.abs(py - y) <= 4 &&
+                Math.abs(pz - z) <= 4
+            ) {
+                if (player.team == 0) { red++ }
+                else { blue++ }
+            }
+        }
+        return [red, blue]
+
+    }
+
+    generation(data) {
+        // reset visibility
+        for (var i = 0; i < this.respawns.red.length; i++) {
+            for (var j = 0; j < this.respawns.red[i].length; j++) {
+                for (var k = 0; k < this.respawns.red[i][j].length; k++) {
+                    this.respawns.red[i][j][k].visible = false
+                    this.respawns.blue[i][j][k].visible = false
+                }
+            }
+        }
+        // set visibility
+        for (var i = 0; i < data.respawns.red.length; i++) {
+            this.respawns.red
+                [data.respawns.red[i][0]]
+                [data.respawns.red[i][1]]
+                [data.respawns.red[i][2]].visible = true
+        }
+        for (var i = 0; i < data.respawns.blue.length; i++) {
+            this.respawns.blue
+                [data.respawns.blue[i][0]]
+                [data.respawns.blue[i][1]]
+                [data.respawns.blue[i][2]].visible = true
+        }
     }
 
 }

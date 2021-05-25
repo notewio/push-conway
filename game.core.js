@@ -85,6 +85,8 @@ class Player {
         this.id
         this.team = 0
 
+        this.dead = false
+
     }
 
     /* three( number ) => void
@@ -226,6 +228,8 @@ class Game {
      */
     updatePlayer0(dt, player) {
 
+        if (player.dead) { return }
+
         this.processInput(player)
         if (player.inputs.length > 0) {
             player.lastInput = player.inputs[player.inputs.length - 1].time
@@ -252,6 +256,8 @@ class Game {
             velocity verlet.
      */
     updatePlayer1(dt, player) {
+
+        if (player.dead) { return }
 
         if (player.pushedAngle.manhattanLength() != 0) {
             player.velocity.copy(player.pushedAngle)
@@ -284,6 +290,8 @@ class Game {
             velocity verlet.
      */
     updatePlayer2(dt, player) {
+
+        if (player.dead) { return }
 
         let acceleration = player.acceleration
         let velocity = player.velocity
@@ -341,34 +349,6 @@ class Game {
         } else {
             return false
         }
-
-    }
-
-    /* countSurroundings( player ) => [number, number]
-        Count the number of players on each team in the immediate surroundings
-            of p1.
-     */
-    countSurroundings(p1) {
-
-        let x = snapToGrid(p1.position.x),
-            y = snapToGrid(p1.position.y),
-            z = snapToGrid(p1.position.z)
-        let red = 0,
-            blue = 0
-        for (const [id, player] of Object.entries(this.state.players)) {
-            if (id == p1.id) { continue }
-            let px = snapToGrid(player.position.x),
-                py = snapToGrid(player.position.y),
-                pz = snapToGrid(player.position.z)
-            if (Math.abs(px - x) <= 4 &&
-                Math.abs(py - y) <= 4 &&
-                Math.abs(pz - z) <= 4
-            ) {
-                if (player.team == 0) { red++ }
-                else { blue++ }
-            }
-        }
-        return [red, blue]
 
     }
 
