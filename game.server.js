@@ -35,8 +35,8 @@ class Server extends Core.Game {
         // 0/1: red/blue
         this.respawns = { red: [], blue: [] }
 
-         // TODO: real timing
-        setInterval(this.conwayGeneration.bind(this), 3000)
+        // TODO: real timing
+        //setInterval(this.conwayGeneration.bind(this), 30000)
 
     }
 
@@ -158,9 +158,12 @@ class Server extends Core.Game {
                 }
             }
         }
+        // reset respawns
+        this.respawns = { red: [], blue: [] }
 
         // fill in players
         for (const [id, player] of Object.entries(this.state.players)) {
+            if (player.dead) { continue }
             let x = (Core.snapToGrid(player.position.x) + Core.WORLD_SIZE) / Core.GRID_SIZE,
                 y = Core.snapToGrid(player.position.y) / Core.GRID_SIZE,
                 z = (Core.snapToGrid(player.position.z) + Core.WORLD_SIZE) / Core.GRID_SIZE
@@ -224,6 +227,41 @@ class Server extends Core.Game {
                         birthsDone.push(n)
                     }
                 }
+            }
+        }
+
+        // respawn players to the closest respawn point
+        // Manhattan distance to keep things simple
+        for (const [id, player] of Object.entries(this.state.players)) {
+            if (player.dead) {
+                let possible = player.team == 0 ? this.respawns.red : this.respawns.blue
+                if (possible.length == 0) { continue }
+                let closest = 0
+
+                let min = Core.WORLD_SIZE
+                for (var i = 0; i < possible.length-1; i++) {
+                    let spawn = possible[i]
+                    let d = Math.abs(player.grid[0] - spawn[0]) +
+                            Math.abs(player.grid[1] - spawn[1]) +
+                            Math.abs(player.grid[2] - spawn[2])
+                    if (d < min) {
+                        min = d
+                        closest = i
+                    }
+                }
+
+                player.dead = false
+
+                player.position.fromArray(possible[closest])
+                player.position.addScalar(-8)
+                player.position.y += 8
+                player.position.multiplyScalar(Core.GRID_SIZE)
+                player.position.addScalar(Core.GRID_SIZE / 2)
+
+                player.onFloor = false
+                player.velocity.set(0, 0, 0)
+                player.acceleration.set(0, 0, 0)
+                possible.splice(closest, 1)
             }
         }
 

@@ -228,13 +228,13 @@ class Game {
      */
     updatePlayer0(dt, player) {
 
-        if (player.dead) { return }
-
         this.processInput(player)
         if (player.inputs.length > 0) {
             player.lastInput = player.inputs[player.inputs.length - 1].time
         }
         player.inputs = []
+
+        if (player.dead) { return }
 
         if (player.pushing && new Date().getTime() - player.lastPush > PUSH_COOLDOWN) {// TODO: nasty calls to getTime, find some cleaner way to use the time...
             for (const [id, other] of Object.entries(this.state.players)) {
