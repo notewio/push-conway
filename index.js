@@ -55,3 +55,18 @@ io.on("connection", (client) => {
     })
 
 })
+
+const admin = io.of("/admin")
+admin.on("connection", (client) => {
+    console.log("io\t:: admin connected")
+
+    client.emit("update", game.lastState)
+
+    client.on("generation", (data) => {
+        game.conwayGeneration()
+    })
+
+    setInterval(() => {
+        client.emit("update", game.lastState)
+    }, 3000)
+})
