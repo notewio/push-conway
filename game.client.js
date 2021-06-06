@@ -6,6 +6,7 @@ import { PointerLockControls } from "./three/examples/jsm/controls/PointerLockCo
 import { EffectComposer } from './three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from './three/examples/jsm/postprocessing/RenderPass.js'
 import { SMAAPass } from './three/examples/jsm/postprocessing/SMAAPass.js'
+import { FilmPass } from './three/examples/jsm/postprocessing/FilmPass.js'
 
 
 const LOADER = new GLTFLoader()
@@ -25,6 +26,8 @@ class Client extends Core.Game {
 
         this.selfInputs = []
         this.serverUpdates = []
+
+        this.dead = false
 
         this.prediction.bind(this)
 
@@ -52,8 +55,6 @@ class Client extends Core.Game {
 
         this.socket.on("playerconnected", this.playerConnected.bind(this))
         this.socket.on("playerdisconnected", this.playerDisconnected.bind(this))
-
-        this.socket.on("generation", this.generation.bind(this))
 
     }
 
@@ -140,6 +141,9 @@ class Client extends Core.Game {
         this.composer.addPass(renderPass)
         const antialiasPass = new SMAAPass()
         this.composer.addPass(antialiasPass)
+        this.filmPass = new FilmPass( 0.35, 0.5, 640, true )
+        this.composer.addPass(this.filmPass)
+        this.filmPass.enabled = false
 
     }
 
@@ -221,6 +225,9 @@ class Client extends Core.Game {
                 newAngle.fromArray(player.angle)
                 Core.sphere_interp(statePlayer.angle, newAngle)
                 statePlayer.cube.rotation.setFromQuaternion(statePlayer.angle)
+
+                statePlayer.cube.visible = !player.dead
+                statePlayer.cellCube.visible = !player.dead
             }
         }
 
@@ -237,13 +244,16 @@ class Client extends Core.Game {
         this.hud.redsurround.innerText = red
         this.hud.bluesurround.innerText = blue
 
+        this.dead = data.players[this.id].dead
+        this.filmPass.enabled = this.dead
+
     }
 
     // Client prediction
     // see https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization#Client_Side_Prediction
     prediction() {
 
-        if (this.serverUpdates.length < 1 || this.selfInputs.length < 1) {
+        if (this.serverUpdates.length < 1 || this.selfInputs.length < 1 || this.dead) {
             return
         }
 
@@ -437,9 +447,6 @@ class Client extends Core.Game {
         }
         return [red, blue]
 
-    }
-
-    generation(data) {
     }
 
 }

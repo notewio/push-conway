@@ -129,6 +129,8 @@ class Game {
      */
     processInput(player) {
 
+        if (player.dead) { return }
+
         // movement forces
         for (let i = 0; i < player.inputs.length; i++) {
             let input = player.inputs[i]
@@ -180,15 +182,15 @@ class Game {
 
         let lb = -WORLD_SIZE + PLAYER_SIZE,
             rb = WORLD_SIZE - PLAYER_SIZE
-        if (newPos.x <= lb) { dir.x = lb - oldPos.x }
-        if (newPos.x >= rb) { dir.x = rb - oldPos.x }
-        if (newPos.z <= lb) { dir.z = lb - oldPos.z }
-        if (newPos.z >= rb) { dir.z = rb - oldPos.z }
+        if (newPos.x <= lb) { dir.x = lb - oldPos.x; player.dead = true }
+        if (newPos.x >= rb) { dir.x = rb - oldPos.x; player.dead = true }
+        if (newPos.z <= lb) { dir.z = lb - oldPos.z; player.dead = true }
+        if (newPos.z >= rb) { dir.z = rb - oldPos.z; player.dead = true }
 
         newPos = player.position.clone().add(dir)
 
         for (const [id, other] of Object.entries(this.state.players)) {
-            if (id == player.id) { continue }
+            if (id == player.id || player.dead) { continue }
 
             let sx = snapToGrid(other.position.x) - PLAYER_SIZE,
                 sy = snapToGrid(other.position.y) - PLAYER_SIZE,

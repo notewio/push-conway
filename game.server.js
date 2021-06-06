@@ -47,7 +47,7 @@ class Server extends Core.Game {
         this.state.players[id].id = id
 
         if (this.teams.red > this.teams.blue) {
-            this.state.players[id].team = 1
+            this.state.players[id].team = 0
             this.teams.blue++
         } else {
             this.state.players[id].team = 0
@@ -163,17 +163,20 @@ class Server extends Core.Game {
 
         // fill in players
         for (const [id, player] of Object.entries(this.state.players)) {
-            if (player.dead) { continue }
             let x = (Core.snapToGrid(player.position.x) + Core.WORLD_SIZE) / Core.GRID_SIZE,
                 y = Core.snapToGrid(player.position.y) / Core.GRID_SIZE,
                 z = (Core.snapToGrid(player.position.z) + Core.WORLD_SIZE) / Core.GRID_SIZE
-            this.grid[x][y][z] = player.team
+            if (!player.dead) {
+                this.grid[x][y][z] = player.team
+            }
             player.grid = [x, y, z]
         }
 
         // check cells
         let birthsDone = [] // keep this so we don't redo any cells
         for (const [id, player] of Object.entries(this.state.players)) {
+
+            if (player.dead) { continue }
 
             let [self, other] = this.countSurroundings(...player.grid)
 
