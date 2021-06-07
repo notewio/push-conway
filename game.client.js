@@ -40,7 +40,8 @@ class Client extends Core.Game {
 
         this.initKeyboard()
         this.initMouse()
-        setInterval(this.sendInput.bind(this), Core.DT)
+
+        this.readied = false
 
     }
 
@@ -55,6 +56,11 @@ class Client extends Core.Game {
 
         this.socket.on("playerconnected", this.playerConnected.bind(this))
         this.socket.on("playerdisconnected", this.playerDisconnected.bind(this))
+
+        this.socket.on("readyupdate", this.onReadyUpdate.bind(this))
+        this.socket.on("gamestart", this.onGameStart.bind(this))
+
+        this.socket.on("error", data => { alert(data) })
 
     }
 
@@ -159,6 +165,9 @@ class Client extends Core.Game {
         document.addEventListener("mouseup", this.onMouseUp.bind(this), false)
 
         this.keysPressed = {}
+        for (const [key, value] of Object.entries(Core.CONTROLS)) {
+            this.keysPressed[value] = false
+        }
 
     }
 
@@ -173,11 +182,22 @@ class Client extends Core.Game {
             document.getElementById("blocker").style.display = "none"
         })
         this.pointerControls.addEventListener("unlock", () => {
-            document.getElementById("blocker").style.display = "block"
+            document.getElementById("blocker").style.display = "flex"
         })
 
         document.getElementById("blocker").addEventListener("click", () => {
             this.pointerControls.lock()
+        })
+        document.getElementById("username").addEventListener("click", e => {
+            e.stopPropagation()
+        })
+        document.getElementById("connect").addEventListener("click", () => {
+            let n = document.getElementById("usernamefield").value
+            if (n.length > 0) {
+                this.socket.emit("usernamechange", n)
+            }
+            document.getElementById("blocker").click()
+            document.getElementById("username").style.display = "none"
         })
 
     }
@@ -187,7 +207,9 @@ class Client extends Core.Game {
         this.hud = {
             ready: document.getElementById("ready"),
             redsurround: document.getElementById("redsurround"),
-            bluesurround: document.getElementById("blusurround")
+            bluesurround: document.getElementById("blusurround"),
+            readypanel: document.getElementById("readypanel"),
+            timer: document.getElementById("time")
         }
 
     }
@@ -197,11 +219,14 @@ class Client extends Core.Game {
 
         this.id = data.id
         console.log("connected to the server, id " + this.id)
+        setInterval(this.sendInput.bind(this), Core.DT)
 
     }
 
     // Process server update
     updateReceived(data) {
+
+        if (this.id === undefined) { return }
 
         this.serverUpdates.push(data)
 
@@ -362,8 +387,15 @@ class Client extends Core.Game {
     onKeyPressed(event) {
 
         let keyCode = event.which
+        let action = Core.CONTROLS[keyCode]
         if (keyCode in Core.CONTROLS) {
-            this.keysPressed[Core.CONTROLS[keyCode]] = true
+
+            if (this.keysPressed[action] == false && action == "readyup" && this.id !== undefined) {
+                this.readied = !this.readied
+                this.socket.emit("readyup", this.readied)
+            }
+
+            this.keysPressed[action] = true
         }
 
     }
@@ -447,6 +479,22 @@ class Client extends Core.Game {
         }
         return [red, blue]
 
+    }
+
+    onReadyUpdate(data) {
+        console.log(data)
+        let final = ""
+        for (const [username, ready] of Object.entries(data)) {
+            final += `<span class="readyitem ${ready ? "green" : "red"}">${username}</span>`
+        }
+        this.hud.readypanel.innerHTML = final
+    }
+
+    onGameStart(data) {
+        this.hud.readypanel.style.display = "none"
+        setInterval(() => {
+            this.hud.timer.innerText = Core.GENERATION_TIME - (Math.floor((new Date().getTime() - data) / 1000) % Core.GENERATION_TIME)
+        }, 1000)
     }
 
 }

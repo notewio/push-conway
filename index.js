@@ -39,11 +39,33 @@ io.on("connection", (client) => {
 
     let id = UUID()
 
-    client.emit("onconnected", { id: id })
+    client.on("usernamechange", data => {
 
-    game.addPlayer(id)
+        if (game.started) {
+            client.emit("error", "Game has already started")
+            return
+        }
+        if (game.state.players.length == Core.MAX_PLAYERS) {
+            client.emit("error", "Game is full")
+            return
+        }
 
-    console.log("io\t:: player " + id + " connected")
+        if (!game.state.players.hasOwnProperty(id)) {
+            client.emit("onconnected", { id: id })
+            game.addPlayer(id)
+            console.log(`io\t:: player ${id} ${data} connected`)
+        }
+
+        game.state.players[id].username = data
+
+        game.checkGameStart()
+
+    })
+
+    client.on("readyup", data => {
+        game.state.players[id].readied = data
+        game.checkGameStart()
+    })
 
     client.on("input", (data) => {
         game.state.players[id].inputs.push(data)

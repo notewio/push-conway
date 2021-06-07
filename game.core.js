@@ -10,6 +10,7 @@ const CONTROLS = {
     65: "l", 68: "r",
     32: "j",
     "lmb": "a",
+    115: "readyup",
 }
 
 // Physics variables.
@@ -29,6 +30,8 @@ const PUSH_RADIUS = Math.PI / 3.5
 
 // Misc.
 const PUSH_COOLDOWN = 5000
+const GENERATION_TIME = 20
+const MAX_PLAYERS = 10
 
 
 // Class representing a user input.
@@ -86,6 +89,9 @@ class Player {
         this.team = 0
 
         this.dead = false
+
+        this.username = ""
+        this.readied = false
 
     }
 
@@ -439,7 +445,7 @@ function snapToGrid(n) {
 }
 
 export {
-    DT, CONTROLS, GRID_SIZE, WORLD_SIZE, PUSH_COOLDOWN,
+    DT, CONTROLS, GRID_SIZE, WORLD_SIZE, PUSH_COOLDOWN, GENERATION_TIME, MAX_PLAYERS,
     Input, Player, State, Game,
     fixedQuat, interp, sphere_interp, snapToGrid,
 }

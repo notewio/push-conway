@@ -37,6 +37,7 @@ class Server extends Core.Game {
 
         // TODO: real timing
         //setInterval(this.conwayGeneration.bind(this), 30000)
+        this.started = false
 
     }
 
@@ -47,7 +48,7 @@ class Server extends Core.Game {
         this.state.players[id].id = id
 
         if (this.teams.red > this.teams.blue) {
-            this.state.players[id].team = 0
+            this.state.players[id].team = 1
             this.teams.blue++
         } else {
             this.state.players[id].team = 0
@@ -277,6 +278,22 @@ class Server extends Core.Game {
             respawns: this.respawns
         }
         this.socket.emit("generation", data)
+    }
+
+    checkGameStart() {
+        let start = true
+        let readies = {}
+        for (const [id, player] of Object.entries(this.state.players)) {
+            start &= player.readied
+            readies[player.username] = player.readied
+        }
+        if (start && !this.started) {
+            setInterval(this.conwayGeneration.bind(this), Core.GENERATION_TIME * 1000)
+            console.log("game starting")
+            this.socket.emit("gamestart", new Date().getTime())
+            this.started = true
+        }
+        this.socket.emit("readyupdate", readies)
     }
 }
 
