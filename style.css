@@ -37,6 +37,9 @@ input {
     width: 50%;
     font-size: 3.5vw;
 }
+#connect:hover {
+    cursor: pointer;
+}
 #hud {
     position: absolute;
     width: 100%;

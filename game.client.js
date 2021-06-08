@@ -169,6 +169,12 @@ class Client extends Core.Game {
             this.keysPressed[value] = false
         }
 
+        document.getElementById("usernamefield").addEventListener("keyup", e => {
+            if (e.key === "Enter") {
+                document.getElementById("connect").click()
+            }
+        })
+
     }
 
     initMouse() {
