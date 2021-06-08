@@ -77,6 +77,14 @@ input {
     box-sizing: border-box;
     color: #8f8;
 }
+#gameend {
+    position: absolute;
+    width: 100vw;
+    top: calc(50vh - 64px);
+    left: 0;
+    text-align: center;
+    box-sizing: border-box;
+}
 .spacer {
     flex: 1;
 }
@@ -100,4 +108,7 @@ input {
 }
 .readyitem.red {
     background-color: rgba(255, 128, 128, 0.9);
+}
+.readyitem.blue {
+    background-color: rgba(128, 128, 255, 0.9);
 }

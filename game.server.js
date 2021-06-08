@@ -271,6 +271,32 @@ class Server extends Core.Game {
 
         // broadcast the generation update
         this.broadcastGeneration()
+
+        this.checkWin()
+    }
+
+    checkWin() {
+        let r = 0,
+            b = 0
+        for (const [id, player] of Object.entries(this.state.players)) {
+            if (!player.dead) {
+                if (player.team == 0) {
+                    r++
+                } else if (player.team == 1) {
+                    b++
+                }
+            }
+        }
+        if (r == 0 && b == 0) {
+            this.socket.emit("gameend", 2)
+            clearInterval(this.generationLoop)
+        } else if (r == 0) {
+            this.socket.emit("gameend", 1)
+            clearInterval(this.generationLoop)
+        } else if (b == 0) {
+            this.socket.emit("gameend", 0)
+            clearInterval(this.generationLoop)
+        }
     }
 
     broadcastGeneration() {
@@ -285,10 +311,10 @@ class Server extends Core.Game {
         let readies = {}
         for (const [id, player] of Object.entries(this.state.players)) {
             start &= player.readied
-            readies[player.username] = player.readied
+            readies[player.username] = {ready: player.readied, team: player.team}
         }
         if (start && !this.started) {
-            setInterval(this.conwayGeneration.bind(this), Core.GENERATION_TIME * 1000)
+            this.generationLoop = setInterval(this.conwayGeneration.bind(this), Core.GENERATION_TIME * 1000)
             console.log("game starting")
             this.socket.emit("gamestart", new Date().getTime())
             this.started = true

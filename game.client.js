@@ -62,6 +62,12 @@ class Client extends Core.Game {
 
         this.socket.on("error", data => { alert(data) })
 
+        this.socket.on("gameend", data => {
+            let results = ["RED WIN", "BLUE WIN", "DRAW"]
+            document.getElementById("gameend").innerText = results[data]
+            document.getElementById("time").style.display = "none"
+        })
+
     }
 
     initThree() {
@@ -490,8 +496,10 @@ class Client extends Core.Game {
     onReadyUpdate(data) {
         console.log(data)
         let final = ""
-        for (const [username, ready] of Object.entries(data)) {
-            final += `<span class="readyitem ${ready ? "green" : "red"}">${username}</span>`
+        for (const [username, d] of Object.entries(data)) {
+            let ready = d.ready
+            let team = d.team
+            final += `<span class="readyitem ${ready ? "green" : (team == 0 ? "red" : "blue")}">${username}</span>`
         }
         this.hud.readypanel.innerHTML = final
     }
