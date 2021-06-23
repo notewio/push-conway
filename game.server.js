@@ -14,6 +14,8 @@ class Server extends Core.Game {
         this.socket
         this.lastState = new Core.State()
 
+        this.started = false
+
         setInterval(this.updatePhysics.bind(this), Core.DT)
         setInterval(this.broadcast.bind(this), SERVER_BROADCAST_DT)
 
@@ -34,10 +36,6 @@ class Server extends Core.Game {
         // -1: empty
         // 0/1: red/blue
         this.respawns = { red: [], blue: [] }
-
-        // TODO: real timing
-        //setInterval(this.conwayGeneration.bind(this), 30000)
-        this.started = false
 
     }
 
@@ -81,7 +79,7 @@ class Server extends Core.Game {
             super.updatePlayer0(this.dt, player)
         }
         for (const [id, player] of Object.entries(this.state.players)) {
-            super.updatePlayer1(this.dt, player)
+            super.updatePlayer1(this.dt, player, this.started)
         }
         for (const [id, player] of Object.entries(this.state.players)) {
             super.updatePlayer2(this.dt, player)

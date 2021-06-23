@@ -172,7 +172,7 @@ class Game {
     /* collision( vector, Player ) => void
         Check for collision with a player and a delta position vector.
      */
-    collision(dir, player) {
+    collision(dir, player, gameStarted) {
 
         let oldPos = player.position
         let newPos = player.position.clone().add(dir)
@@ -193,7 +193,12 @@ class Game {
         if (newPos.z <= lb) { dir.z = lb - oldPos.z; player.dead = true }
         if (newPos.z >= rb) { dir.z = rb - oldPos.z; player.dead = true }
 
-        newPos = player.position.clone().add(dir)
+        if (gameStarted) {
+            newPos = player.position.clone().add(dir)
+        } else if (!gameStarted && player.dead) {
+            newPos = new THREE.Vector3(0, 0, 0)
+            player.dead = false
+        }
 
         for (const [id, other] of Object.entries(this.state.players)) {
             if (id == player.id || player.dead) { continue }
@@ -263,7 +268,7 @@ class Game {
         Use the delta time and player's acceleration to update their position with
             velocity verlet.
      */
-    updatePlayer1(dt, player) {
+    updatePlayer1(dt, player, gameStarted) {
 
         if (player.dead) { return }
 
@@ -287,7 +292,7 @@ class Game {
 
         dir.x = clamp(dir.x, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
         dir.z = clamp(dir.z, -XZ_VELOCITY_CLAMP, XZ_VELOCITY_CLAMP)
-        this.collision(dir, player)
+        this.collision(dir, player, gameStarted)
 
         player.position.add(dir)
 
